@@ -8,15 +8,14 @@ var app = (function () {
     }
     
     var stompClient = null;
+    var canvas = null;
 
     var addPointToCanvas = function (point) {        
-        var canvas = document.getElementById("canvas");
         var ctx = canvas.getContext("2d");
         ctx.beginPath();
         ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
         ctx.stroke();
     };
-    
     
     var getMousePosition = function (evt) {
         canvas = document.getElementById("canvas");
@@ -38,16 +37,27 @@ var app = (function () {
             console.log('Connected: ' + frame);
             stompClient.subscribe('/topic/newpoint', function (eventbody) {
                 var obj = JSON.parse(eventbody.body);
-                alert(obj);
+                addPointToCanvas(obj);
+                //alert(obj.x + "  " + obj.y);
             });
         });
     };    
+
+    var loadEventListener = function(){
+        if (window.PointerEvent){
+            canvas.addEventListener("pointerdown", event => {
+                const pt = getMousePosition(event);
+                addPointToCanvas(pt);
+                stompClient.send("/topic/newpoint", {}, JSON.stringify(pt));
+            });
+        }
+    }
     
     return {
 
         init: function () {
-            var can = document.getElementById("canvas");
-            
+            canvas = document.getElementById("canvas");
+            loadEventListener();
             //websocket connection
             connectAndSubscribe();
         },
